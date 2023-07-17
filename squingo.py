@@ -184,7 +184,7 @@ def play_random_wave_sfx_from_dir(dir):
     '''
 
     # glob handles hidden files across OSes
-    sfx_path = random.choice([path for path in Path(dir).glob('*')])
+    sfx_path = random.choice([path for path in Path(dir).glob('*') if not any(part.startswith('.') for part in path.parts)])
     playsound.playsound(sfx_path);
 
 def get_outcome(hand):

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import random
-import simpleaudio
+import playsound
 import string
 from termcolor import colored
 import threading
@@ -184,8 +184,8 @@ def play_random_wave_sfx_from_dir(dir):
     '''
 
     # glob handles hidden files across OSes
-    sfx_path = random.choice([str(path) for path in Path(dir).glob('*')])
-    simpleaudio.WaveObject.from_wave_file(sfx_path).play().wait_done()
+    sfx_path = random.choice([path for path in Path(dir).glob('*')])
+    playsound.playsound(sfx_path);
 
 def get_outcome(hand):
     '''

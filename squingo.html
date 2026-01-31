@@ -229,6 +229,54 @@
                 HE DO BE TERRORIZING THE SEVEN SEAS THOUGH 👀
 `
 
+    // relative paths to filler sound effects to play immediately after input is entered
+    SFX_INPUT_PATHS = [
+        "sfx/input/Robot_blip-Marianne_Gagnon-120342607.wav"
+    ]
+
+    // relative paths to beep sound effects to play when a processing a hand
+    SFX_BEEP_PATHS = [
+        "sfx/beep/Bleep-SoundBible.com-1927126940.wav"
+    ]
+
+    // relative paths to miscellanous filler sound effects to play when processing a hand
+    SFX_MISC_PATHS = [
+        "sfx/misc/Alien Brain Scanner-SoundBible.com-2034590144.wav",
+        "sfx/misc/Computer Error Alert-SoundBible.com-783113881.wav",
+        "sfx/misc/Martian_Death_Ray-Mike_Koenig-937891031.wav",
+        "sfx/misc/Monster Growl-SoundBible.com-344645592.wav",
+        "sfx/misc/Time Warp-SoundBible.com-634766493.wav",
+        "sfx/misc/WilhelmScream.wav"
+    ]
+
+    // relative paths to sound effects to play when a hand is squingo
+    SFX_SQUINGO_PATHS = [
+        "sfx/squingo/cartoon-telephone_daniel_simion.wav",
+        "sfx/squingo/Computer_Magic-Microsift-1901299923.wav",
+        "sfx/squingo/Warning Siren-SoundBible.com-898272278.wav",
+        "sfx/squingo/Zombie In Pain-SoundBible.com-134322253.wav",
+    ]
+
+    // relative paths to sound effects to play when a hand is not squingo
+    SFX_NOT_SQUINGO_PATHS = [
+        "sfx/not_squingo/Burp 2x-SoundBible.com-1895509911.wav",
+        "sfx/not_squingo/Cat Scream-SoundBible.com-871191563.wav",
+        "sfx/not_squingo/Laugh Evil-SoundBible.com-1059217446.wav",
+        "sfx/not_squingo/Warning Siren-SoundBible.com-898272278.wav",
+    ]
+
+    // relative paths to sound effects to play when a hand is monkey pirate
+    SFX_MONKEY_PIRATE_PATHS = [
+        "sfx/monkey_pirate/monkey_pirate.wav"
+    ]
+
+    // the inclusive min amount of time in milliseconds to wait
+    // between playing consecutive non-blocking sound effects
+    INCLUSIVE_MIN_SFX_PAUSE_MS = 1000
+    // the exclusive max amount of time in milliseconds to wait
+    // between playing consecutive non-blocking sound effects
+    EXCLUSIVE_MAX_SFX_PAUSE_MS = 3000
+
     /**
      * Return the given input element's text when the user presses enter.
      */
@@ -282,6 +330,7 @@
         consoleElement.appendChild(inputScreenElement)
 
         const cardHand = await waitForInput(inputScreenElement, "Enter the card hand: ")
+        await playRandomSfxFromPathsBlocking(SFX_INPUT_PATHS)
 
         return cardHand
     }
@@ -305,6 +354,40 @@
             setTimeout(resolve, durationMs)
         )
     }
+
+    /**
+     * Play a random sound effect from the given list of sound effect paths,
+     * blocking until the sound finishes.
+     */
+    function playRandomSfxFromPathsBlocking(sfxPaths) {
+        const sfxPath = randomItemInArray(sfxPaths)
+        return new Promise(resolve => {
+            let audio = new Audio(sfxPath)
+            audio.onended = resolve
+            audio.play()
+        })
+    }
+
+    /**
+     * Without blocking execution, repeatedly wait a random amount of time
+     * and then play a random sound from the given list of sound effect paths.
+     * During each iteration, update the value in timeoutWrapper.timeout
+     * with the current iteration's timeout, so that this function's original caller
+     * can stop sounds from playing by calling cancelTimeout(timeoutWrapper.timeout).
+     * (The caller created the timeoutWrapper object and then passed it by reference
+     * into this function. Thus, the caller will see any edits that this function makes to
+     * timeoutWrapper. If instead this function took a timeout primitive that wasn't contained
+     * in a wrapper object, then this function would take the timeout by value, so the caller would
+     * not see edits to the caller.)
+     */
+    function repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper) {
+        const delayTimeMs = randomIntInRange(INCLUSIVE_MIN_SFX_PAUSE_MS, EXCLUSIVE_MAX_SFX_PAUSE_MS)
+        timeoutWrapper.timeout = setTimeout(() => {
+            playRandomSfxFromPathsBlocking(sfxPaths)
+            repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper)
+        }, delayTimeMs)
+    }
+
 
     /**
      * Display a bunch of junk characters.
@@ -355,6 +438,12 @@
      * each made by combining a random verb and noun.
      */
     async function runLoadingMessages(loadingScreenElement) {
+        let miscTimeoutWrapper = { timeout: null }
+        repeatRandomSfxFromPathsNonBlocking(SFX_MISC_PATHS, miscTimeoutWrapper)
+        await delay(1000)
+        let beepTimeoutWrapper = { timeout: null }
+        repeatRandomSfxFromPathsNonBlocking(SFX_BEEP_PATHS, beepTimeoutWrapper)
+
         const numLoadingMessages = randomIntInRange(4, 10)
         for (let loadingMessageIndex = 0; loadingMessageIndex <= numLoadingMessages; ++loadingMessageIndex) {
             let loadingMessageRowElement = document.createElement("div")
@@ -382,6 +471,9 @@
             loadingMessageRowElement.classList.remove("active-loading-message")
             await delay(500)
         }
+
+        clearTimeout(miscTimeoutWrapper.timeout)
+        clearTimeout(beepTimeoutWrapper.timeout)
     }
 
     /**
@@ -501,12 +593,18 @@
                 squingoTextElement.classList.add("outcome-text", "outcome-text-squingo")
                 squingoTextElement.textContent = TEXT_SQUINGO
                 outcomeElement.appendChild(squingoTextElement)
+
+                await playRandomSfxFromPathsBlocking(SFX_SQUINGO_PATHS)
+
                 break;
             case Outcome.NOT_SQUINGO:
                 let notSquingoTextElement = document.createElement("div")
                 notSquingoTextElement.classList.add("outcome-text", "outcome-text-not-squingo")
                 notSquingoTextElement.textContent = TEXT_NOT_SQUINGO
                 outcomeElement.appendChild(notSquingoTextElement)
+
+                await playRandomSfxFromPathsBlocking(SFX_NOT_SQUINGO_PATHS)
+
                 break;
             default:  // monkey pirate
                 let monkeyPirateTextElement = document.createElement("div")
@@ -518,10 +616,11 @@
                 monkeyPirateGraphicElement.classList.add("outcome-graphic", "outcome-graphic-monkey-pirate")
                 monkeyPirateGraphicElement.textContent = GRAPHIC_MONKEY_PIRATE
                 outcomeElement.appendChild(monkeyPirateGraphicElement)
+
+                await playRandomSfxFromPathsBlocking(SFX_MONKEY_PIRATE_PATHS)
+
                 break;
         }
-
-        await delay(2500)
     }
 
     /**

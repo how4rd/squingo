@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SQUINGO</title>
+</head>
+
+<style>
+    body {
+        background: #222;
+        font-family: monospace;
+        color: #ddd;
+    }
+
+    .input-so-far {
+        background: none;
+        border: 0;
+        font-family: inherit;
+        color: inherit;
+        caret-color: inherit;
+        user-select: none;
+        font-size: inherit;
+    }
+
+    .input-so-far:focus {
+        outline: none;
+    }
+
+    .postprocessing-text {
+        padding-top: 1em;
+        padding-bottom: 1em;
+    }
+
+    .outcome-screen {
+        padding-bottom: 1em;
+    }
+
+    @keyframes blink {
+        50% {
+            opacity: 0;
+        }
+    }
+
+    .outcome-text {
+        white-space: pre;
+        animation: blink 1s infinite step-start;
+    }
+
+    .outcome-text-squingo {
+        color: #0f0;
+    }
+
+    .outcome-text-not-squingo {
+        color: #f00;
+    }
+
+    .outcome-text-monkey-pirate {
+        color: #f0f;
+    }
+
+    .outcome-graphic {
+        white-space: pre;
+    }
+</style>
+
+<body>
+    <div id="console"></div>
+</body>
+
+<script>
+    // possible page titles to set on load
+
+    const PAGE_TITLES = [
+        "𝕊ℚ𝕌𝕀ℕ𝔾𝕆",
+        "S̸̥͎̘̹͍̓̀̈͗̌Q̵̖̒͆U̶̙͑̽̀͛͝Ì̷̗̖͒N̷̘̰̲̮͋̒̽G̴̖̣̥͇͉̋̈́̕O̴̝̤͍̒͒",
+        "🆂🆀🆄🅸🅽🅶🅾",
+        "𝓼𝓺𝓾𝓲𝓷𝓰𝓸",
+        "𝘴𝘲𝘶𝘪𝘯𝘨𝘰",
+        "oƃuᴉnbs"
+    ]
+
+    // probability that each given loading message is the easter egg message
+    const LOADING_EASTER_EGG_PROBABILILITY = 0.01
+
+    // easter egg loading text (appears with probability given by EASTER_EGG_Loading_PERCENTAGE)
+    const LOADING_EASTER_EGG_TEXT = "SOMEBODY PLEASE HELP ME I AM STUCK IN THE COMPUTER OPEN TH"
+
+    // possible filler texts to use when processing a hand
+
+    const LOADING_MESSAGE_VERBS = [
+        "Reticulating",
+        "Degaussing",
+        "Repiping",
+        "Rebooting",
+        "Differentiating with respect to",
+        "Consuming",
+        "Flummoxing",
+        "Derezzing",
+        "Applying the Fourier transform to",
+        "Defibrillating",
+        "Sublimating",
+        "Arming",
+        "Energizing",
+        "Aerosolizing",
+        "Exterminating",
+        "Traversing",
+        "Minifying",
+        "Compressing",
+        "Warming up",
+        "Neutralizing",
+        "Quantifying",
+        "Vectorizing",
+        "Rasterizing",
+        "Kerning",
+        "Parallelizing",
+        "Hashing",
+        "Encrypting",
+        "Decrypting"
+    ]
+
+    const LOADING_MESSAGE_NOUNS = [
+        "splines",
+        "boron wave shift-scoop",
+        "plasma",
+        "beryllium antigravity turbine bracket",
+        "chromium dorsal crystal core",
+        "Higgs bosons",
+        "dilithium",
+        "kyber crystals",
+        "energized protodermis",
+        "exsidian layer",
+        "psionic unit",
+        "moon device",
+        "REDACTED",
+        "adamantium shell",
+        "cockroaches",
+        "droid brains",
+        "hyperdrive",
+        "big data",
+        "blockchain",
+        "Gaussian surface",
+        "vector field",
+        "flux",
+        "ad impressions",
+        "social graph",
+        "kerning",
+        "ligatures",
+        "GPUs",
+        "graphene nanotubes"
+    ]
+
+    // each "frame" of text in the ellipsis animation
+    const ELLIPSIS_FRAMES = [
+        "",
+        ".",
+        "..",
+        "..."
+    ]
+
+    // the length in characters of a full progress bar
+    const FULL_PROGRESS_BAR_LENGTH_CHARS = 75
+
+    // how long in milliseconds the progress bar should freeze in the late 90th percentages
+    const PROGRESS_BAR_FREEZE_TIME_MS = 5000
+
+    // text to print when the hand is a double payout ("Squingo")
+    // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
+    TEXT_SQUINGO = `
+ ▄█▀▀▀▄█   ▄▄█▀▀██   ▀██▀  ▀█▀ ▀██▀ ▀█▄   ▀█▀  ▄▄█▀▀▀▄█   ▄▄█▀▀██
+ ██▄▄  ▀  ▄█▀    ██   ██    █   ██   █▀█   █  ▄█▀     ▀  ▄█▀    ██
+  ▀▀███▄  ██      ██  ██    █   ██   █ ▀█▄ █  ██    ▄▄▄▄ ██      ██
+▄     ▀██ ▀█▄  ▀▄ ▀█  ██    █   ██   █   ███  ▀█▄    ██  ▀█▄     ██
+█▀▄▄▄▄█▀    ▀█▄▄▄▀█▄   ▀█▄▄▀   ▄██▄ ▄█▄   ▀█   ▀▀█▄▄▄▀█   ▀▀█▄▄▄█▀
+`
+
+    // text to print when the hand is a loss ("Not Squingo")
+    // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
+    TEXT_NOT_SQUINGO = `
+▀█▄   ▀█▀  ▄▄█▀▀██   █▀▀██▀▀█     ▄█▀▀▀▄█   ▄▄█▀▀██   ▀██▀  ▀█▀ ▀██▀ ▀█▄   ▀█▀  ▄▄█▀▀▀▄█   ▄▄█▀▀██
+ █▀█   █  ▄█▀    ██     ██        ██▄▄  ▀  ▄█▀    ██   ██    █   ██   █▀█   █  ▄█▀     ▀  ▄█▀    ██
+ █ ▀█▄ █  ██      ██    ██         ▀▀███▄  ██      ██  ██    █   ██   █ ▀█▄ █  ██    ▄▄▄▄ ██      ██
+ █   ███  ▀█▄     ██    ██       ▄     ▀██ ▀█▄  ▀▄ ▀█  ██    █   ██   █   ███  ▀█▄    ██  ▀█▄     ██
+▄█▄   ▀█   ▀▀█▄▄▄█▀    ▄██▄      █▀▄▄▄▄█▀    ▀█▄▄▄▀█▄   ▀█▄▄▀   ▄██▄ ▄█▄   ▀█   ▀▀█▄▄▄▀█   ▀▀█▄▄▄█▀
+`
+
+    // text to print when the hand is a triple payout ("Monkey Pirate")
+    // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
+    TEXT_MONKEY_PIRATE = `
+▀██    ██▀  ▄▄█▀▀██   ▀█▄   ▀█▀ ▀██▀  █▀  ▀██▀▀▀▀█  ▀██▀ ▀█▀   ▀██▀▀█▄  ▀██▀ ▀██▀▀█▄       █     █▀▀██▀▀█ ▀██▀▀▀▀█
+ ███  ███  ▄█▀    ██   █▀█   █   ██ ▄▀     ██  ▄      ██ █      ██   ██  ██   ██   ██     ███       ██     ██  ▄
+ █▀█▄▄▀██  ██      ██  █ ▀█▄ █   ██▀█▄     ██▀▀█       ██       ██▄▄▄█▀  ██   ██▀▀█▀     █  ██      ██     ██▀▀█
+ █ ▀█▀ ██  ▀█▄     ██  █   ███   ██  ██    ██          ██       ██       ██   ██   █▄   ▄▀▀▀▀█▄     ██     ██
+▄█▄ █ ▄██▄  ▀▀█▄▄▄█▀  ▄█▄   ▀█  ▄██▄  ██▄ ▄██▄▄▄▄▄█   ▄██▄     ▄██▄     ▄██▄ ▄██▄  ▀█▀ ▄█▄  ▄██▄   ▄██▄   ▄██▄▄▄▄▄█
+`
+
+    // ASCII graphic to print when the hand is a triple payout ("Monkey Pirate")
+    GRAPHIC_MONKEY_PIRATE = `
+                                       .*,                         
+                                  %@%@@@@@@@@@@(                   
+                                #&&@@@@@@@@@@@@@@#                 
+                    ./(#(//(&@&%&@@ %@@@@@@@@@@%(@@                
+                 @@%%%%%&@@@@@@@@(.&       (@@. @@@@               
+                  @%%@@%@@@@@@@@@@@( .@* &@  #@/&@@@@@@.           
+                   .@@%@@@@@@@@@/ /.   */    @@@@@@@@@@&@@@@(      
+                   #%%@@@@@@@@@@@ @@# , .   (  (@@@@@@@@@@%%@@(    
+                  %%%%,,(@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&%%&&      
+             ,    %%%,,,*%%%%%%%%%%%%@%%%%%%%&@@@@@@@@@@&(         
+           ,,,     &%&,%%%%%%%,,*,,&%%%%%%%%%%%%%%#,*,.&%%%        
+          ,,,,        /%%%%%,,,,/@*,,,%(,,,,,,%%%%%%,,,,%%%.       
+         ,,,,,,       (%%*,,,,&@/,,,,,,,,,,,,,,/%%%%(,#%%(,        
+         ,,,,,,        %%,,,@@@@*,,,,,,,,,,,,,,*%%%%//*            
+         .,,,,,        .#%@,,,*,,,***,,,,,*,,,,,(%%%      ,*.      
+          ,,,.*,         (#,,,,,,(,,,,,,,,,,,,,,(%/   %&%%,.#%%%#  
+           ,,,,,            &*,,,,,,,**,,,,,,,#%,    %%        .%% 
+             ,.,            %####%#(*,,*/#%%#*        %%%*      /%&
+             ,((//,/%%%#%%%%#######*,,,##(####%%                (%%
+              ,,/(,%%%%%%%%######%#,,,,%//#####%%%%,           ,%% 
+                ///      (#####//##,,,,#%###%###%%%%/,,,      #%%  
+                         *%###%%(%*,,,,(#%%#####%%(/,,,,,   (%%.   
+                           &%%*,,,,,,,,,,/####*     .,*, (%#%      
+                            %%%%*,,,,,,/%%%%%#      *#%%%(         
+                           #%%%%%%%%%%%%%#%%%%%%%%%%/              
+                           &%%%%%%%%%%%%%%%%%%%                    
+                           &%%%%%        .%%%%%%,                  
+                           /%%%%#          /##*,,,                 
+                            *,,,,,          .,,,,,                 
+                            .,,,,.
+
+                HE DO BE TERRORIZING THE SEVEN SEAS THOUGH 👀
+`
+
+    /**
+     * Return the given input element's text when the user presses enter.
+     */
+    function getValueOnEnter(inputElement) {
+        return new Promise(resolve => {
+            inputElement.addEventListener("keydown", onKeyDown);
+
+            function onKeyDown(e) {
+                if (e.key === "Enter") {
+                    inputElement.removeEventListener("keydown", onKeyDown);
+                    resolve(inputElement.value);
+                }
+            }
+        })
+    }
+
+    /**
+     * Display an input element that prompts the user with the given text.
+     */
+    async function waitForInput(parentElement, promptText) {
+        let promptElement = document.createElement("span")
+        promptElement.classList.add("input-prompt")
+        promptElement.appendChild(document.createTextNode(promptText))
+
+        let inputElement = document.createElement("span")
+        inputElement.setAttribute("contenteditable", "plaintext-only")
+        inputElement.classList.add("input-so-far")
+
+        let lineElement = document.createElement("div")
+        lineElement.classList.add("input-line", "input-line-active")
+        lineElement.append(promptElement, inputElement)
+
+        parentElement.appendChild(lineElement)
+
+        inputElement.focus()
+
+        const input = await getValueOnEnter(inputElement)
+
+        inputElement.blur()
+        inputElement.classList.remove("input-line-active")
+
+        return input
+    }
+
+    /**
+     * Display a screen asking the user to enter a card hand.
+     */
+    async function runInputScreen(consoleElement) {
+        let inputScreenElement = document.createElement("div")
+        inputScreenElement.classList.add("input-screen")
+        consoleElement.appendChild(inputScreenElement)
+
+        const cardHand = await waitForInput(inputScreenElement, "Enter the card hand: ")
+
+        return cardHand
+    }
+
+    /**
+     * Return a random int in the half-open interval [inclusiveMin, exclusiveMax).
+     */
+    function randomIntInRange(inclusiveMin, exclusiveMax) {
+        return inclusiveMin + Math.floor(Math.random() * (exclusiveMax - inclusiveMin));
+    }
+
+    function randomItemInArray(array) {
+        return array[randomIntInRange(0, array.length)]
+    }
+
+    /**
+     * Delay execution for the given duration.
+     */
+    function delay(durationMs) {
+        return new Promise(resolve =>
+            setTimeout(resolve, durationMs)
+        )
+    }
+
+    /**
+     * Display a bunch of junk characters.
+     */
+    async function runJunkScreen(consoleElement) {
+        let junkScreenElement = document.createElement("div")
+        junkScreenElement.classList.add("junk-screen")
+        consoleElement.appendChild(junkScreenElement)
+
+        let junkElement = document.createElement("span")
+        junkScreenElement.appendChild(junkElement)
+
+        const inclusiveMinNumCharsToPrint = randomIntInRange(10000, 15000)
+        let numCharsPrinted = 0
+
+        const junkChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\t\t\t\t\t\t\n\r";
+
+        while (numCharsPrinted < inclusiveMinNumCharsToPrint) {
+            const numCharsInChunk = randomIntInRange(3, 2000)
+            let chunkText = ""
+            for (let indexInChunk = 0; indexInChunk < numCharsInChunk; ++indexInChunk) {
+                const shouldPrintNonWhitespace = randomIntInRange(0, 3) == 0
+                if (shouldPrintNonWhitespace) {
+                    chunkText += randomItemInArray(junkChars)
+                } else {
+                    chunkText += '\xa0'
+                }
+            }
+
+            let chunkElement = document.createElement("span")
+            // const chunkColor = "#" + randomIntInRange(0, 256 ** 3).toString(16)
+            // console.log(chunkColor)
+            // chunkElement.style.color = chunkColor
+            chunkElement.textContent += chunkText
+            junkElement.appendChild(chunkElement)
+
+            numCharsPrinted += numCharsInChunk
+            const chunkDelayMs = (numCharsInChunk / 30) * randomIntInRange(1, 3)
+            await delay(chunkDelayMs)
+        }
+
+        const finalDelayMs = 1000
+        await delay(finalDelayMs)
+    }
+
+    /**
+     * Display a series of loading messages,
+     * each made by combining a random verb and noun.
+     */
+    async function runLoadingMessages(loadingScreenElement) {
+        const numLoadingMessages = randomIntInRange(4, 10)
+        for (let loadingMessageIndex = 0; loadingMessageIndex <= numLoadingMessages; ++loadingMessageIndex) {
+            let loadingMessageRowElement = document.createElement("div")
+            loadingMessageRowElement.classList.add("active-loading-message")
+            loadingScreenElement.appendChild(loadingMessageRowElement)
+
+            if (Math.random() < LOADING_EASTER_EGG_PROBABILILITY) {
+                loadingMessageRowElement.textContent = LOADING_EASTER_EGG_TEXT
+            } else {
+                const verb = randomItemInArray(LOADING_MESSAGE_VERBS)
+                const noun = randomItemInArray(LOADING_MESSAGE_NOUNS)
+                const textNoEllipsis = verb + ' ' + noun
+                const textFrames = ELLIPSIS_FRAMES.map(ellipsisFrame => textNoEllipsis + ellipsisFrame)
+
+                const numEllipses = randomIntInRange(1, 3)
+                for (let ellipsisIndex = 0; ellipsisIndex < numEllipses; ++ellipsisIndex) {
+                    for (const textFrame of textFrames) {
+                        loadingMessageRowElement.textContent = textFrame
+                        await delay(100)
+                    }
+                }
+
+                loadingMessageRowElement.textContent += " done."
+            }
+            loadingMessageRowElement.classList.remove("active-loading-message")
+            await delay(500)
+        }
+    }
+
+    /**
+     * Display a progress bar ranging from 0-100 that progresses randomly.
+     * The bar freezes for a bit somewhere in the late 90th percentages.
+     */
+    async function runProgressBar(loadingScreenElement) {
+        let postprocessingTextElement = document.createElement("div")
+        postprocessingTextElement.classList.add("postprocessing-text")
+        postprocessingTextElement.textContent = "Postprocessing..."
+        loadingScreenElement.appendChild(postprocessingTextElement)
+
+        let progressBarElement = document.createElement("div")
+        progressBarElement.class = "progress-bar"
+        loadingScreenElement.appendChild(progressBarElement)
+
+        const freezePercentage = randomIntInRange(96, 100)
+
+        for (let percentage = 0; percentage <= 100; ++percentage) {
+            const currentProgressBarLengthChars = Math.round(FULL_PROGRESS_BAR_LENGTH_CHARS * percentage / 100)
+            const progressBarText = '\u25A0'.repeat(currentProgressBarLengthChars) + '\xa0'.repeat(FULL_PROGRESS_BAR_LENGTH_CHARS - currentProgressBarLengthChars)
+            progressBarElement.textContent = `${progressBarText}\xa0\xa0\xa0${percentage}%`
+
+            const freezeTimeMs = percentage == freezePercentage
+                ? PROGRESS_BAR_FREEZE_TIME_MS
+                : randomIntInRange(5, 250)
+            await delay(freezeTimeMs)
+        }
+
+        await delay(1000)
+    }
+
+    /**
+     * Display the loading screen, which shows loading messages and a progress bar.
+     */
+    async function runLoadingScreen(consoleElement) {
+        let loadingScreenElement = document.createElement("div")
+        loadingScreenElement.classList.add("loading-screen")
+        consoleElement.appendChild(loadingScreenElement)
+
+        await runLoadingMessages(loadingScreenElement)
+        await runProgressBar(loadingScreenElement)
+
+        await delay(1000)
+    }
+
+    // the possible outcomes of each match
+    const Outcome = {
+        SQUINGO: "squingo",
+        NOT_SQUINGO: "not squingo",
+        MONKEY_PIRATE: "monkey pirate",
+    }
+
+    // a map from each outcome to its probability relative to the other outcomes
+    const OUTCOME_TO_RELATIVE_PROBABILITY = {
+        [Outcome.SQUINGO]: 46,
+        [Outcome.NOT_SQUINGO]: 44,
+        [Outcome.MONKEY_PIRATE]: 10,
+    }
+
+    /**
+     * return a key from the given map,
+     * where each key's value is the relative probability of selecting that key
+     */
+    function selectOutcome(outcomeToRelativeProbability) {
+        const denominator = Object.values(outcomeToRelativeProbability).reduce(
+            (denominatorSoFar, relativeProbability) => denominatorSoFar + relativeProbability,
+            0
+        )
+
+        const randomResult = randomIntInRange(0, denominator)
+        let relativeProbabilityAlreadyChecked = 0
+
+        // worked example of selecting a random number outcome:
+        // * denominator = 46 + 44 + 10 = 100
+        // * randomResult in [0, 100)
+        // * probability 46/100 of randomResult falling in [0, 46),
+        //   so probability 46/100 of (randomResult - 0) falling in [0, 46);
+        // * probability 44/100 of randomResult falling in [46, 46 + 44),
+        //   so probability 44/100 of (randomResult - 46) falling in [0, 44);
+        // * probability 10/100 of randomResult falling in [46 + 44, 46 + 44 + 10),
+        //   so probability 10/100 of (randomResult - 46 - 44) falling in [0, 10)
+
+        for (const [outcome, relativeProbability] of Object.entries(outcomeToRelativeProbability)) {
+            if (randomResult - relativeProbabilityAlreadyChecked < relativeProbability) {
+                return outcome
+            } else {
+                relativeProbabilityAlreadyChecked += relativeProbability
+            }
+        }
+
+        // the loop above should always terminate;
+        // execution should never reach this point
+        return Object.keys(outcomeToRelativeProbability)[0]
+    }
+
+    /**
+     * Display a screen that shows the round's outcome.
+     */
+    async function runOutcomeScreen(consoleElement) {
+        let outcomeElement = document.createElement("div")
+        outcomeElement.classList.add("outcome-screen")
+        consoleElement.appendChild(outcomeElement)
+
+        let surveySaysTextElement = document.createElement("div")
+        surveySaysTextElement.classList.add("survey-says-text")
+        surveySaysTextElement.textContent = "Survey says..."
+        outcomeElement.appendChild(surveySaysTextElement)
+
+        await delay(1000)
+
+        const outcome = selectOutcome(OUTCOME_TO_RELATIVE_PROBABILITY)
+
+        switch (outcome) {
+            case Outcome.SQUINGO:
+                let squingoTextElement = document.createElement("div")
+                squingoTextElement.classList.add("outcome-text", "outcome-text-squingo")
+                squingoTextElement.textContent = TEXT_SQUINGO
+                outcomeElement.appendChild(squingoTextElement)
+                break;
+            case Outcome.NOT_SQUINGO:
+                let notSquingoTextElement = document.createElement("div")
+                notSquingoTextElement.classList.add("outcome-text", "outcome-text-not-squingo")
+                notSquingoTextElement.textContent = TEXT_NOT_SQUINGO
+                outcomeElement.appendChild(notSquingoTextElement)
+                break;
+            default:  // monkey pirate
+                let monkeyPirateTextElement = document.createElement("div")
+                monkeyPirateTextElement.classList.add("outcome-text", "outcome-text-monkey-pirate")
+                monkeyPirateTextElement.textContent = TEXT_MONKEY_PIRATE
+                outcomeElement.appendChild(monkeyPirateTextElement)
+
+                let monkeyPirateGraphicElement = document.createElement("div")
+                monkeyPirateGraphicElement.classList.add("outcome-graphic", "outcome-graphic-monkey-pirate")
+                monkeyPirateGraphicElement.textContent = GRAPHIC_MONKEY_PIRATE
+                outcomeElement.appendChild(monkeyPirateGraphicElement)
+                break;
+        }
+
+        await delay(2500)
+    }
+
+    /**
+     * Run the game loop
+     */
+    async function runAllScreens() {
+        document.title = randomItemInArray(PAGE_TITLES)
+
+        const consoleElement = document.getElementById("console")
+
+        while (true) {
+            const cardHand = await runInputScreen(consoleElement)
+
+            console.log(`cardHand finished: ${cardHand}`)
+            consoleElement.replaceChildren()
+
+            await runJunkScreen(consoleElement)
+            consoleElement.replaceChildren()
+
+            await runLoadingScreen(consoleElement)
+            consoleElement.replaceChildren()
+
+            await runOutcomeScreen(consoleElement)
+        }
+    }
+
+    runAllScreens()
+</script>
+
+</html>

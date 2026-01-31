@@ -3,6 +3,7 @@
 
 <head>
     <title>SQUINGO</title>
+    <meta charset="UTF-8">
 </head>
 
 <style>
@@ -163,6 +164,20 @@
     // how long in milliseconds the progress bar should freeze in the late 90th percentages
     const PROGRESS_BAR_FREEZE_TIME_MS = 5000
 
+    // the possible outcomes of each match
+    const Outcome = {
+        SQUINGO: "squingo",
+        NOT_SQUINGO: "not squingo",
+        MONKEY_PIRATE: "monkey pirate",
+    }
+
+    // a map from each outcome to its probability relative to the other outcomes
+    const OUTCOME_TO_RELATIVE_PROBABILITY = {
+        [Outcome.SQUINGO]: 46,
+        [Outcome.NOT_SQUINGO]: 44,
+        [Outcome.MONKEY_PIRATE]: 10,
+    }
+
     // text to print when the hand is a double payout ("Squingo")
     // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
     TEXT_SQUINGO = `
@@ -278,6 +293,59 @@
     EXCLUSIVE_MAX_SFX_PAUSE_MS = 3000
 
     /**
+     * Return a random int in the half-open interval [inclusiveMin, exclusiveMax).
+     */
+    function randomIntInRange(inclusiveMin, exclusiveMax) {
+        return inclusiveMin + Math.floor(Math.random() * (exclusiveMax - inclusiveMin));
+    }
+
+    function randomItemInArray(array) {
+        return array[randomIntInRange(0, array.length)]
+    }
+
+    /**
+     * Delay execution for the given duration.
+     */
+    function delay(durationMs) {
+        return new Promise(resolve =>
+            setTimeout(resolve, durationMs)
+        )
+    }
+
+    /**
+     * Play a random sound effect from the given list of sound effect paths,
+     * blocking until the sound finishes.
+     */
+    function playRandomSfxFromPathsBlocking(sfxPaths) {
+        const sfxPath = randomItemInArray(sfxPaths)
+        return new Promise(resolve => {
+            let audio = new Audio(sfxPath)
+            audio.onended = resolve
+            audio.play()
+        })
+    }
+
+    /**
+     * Without blocking, repeatedly wait a random amount of time
+     * and then play a random sound from the given list of sound effect paths.
+     * During each iteration, update the value in timeoutWrapper.timeout
+     * with the current iteration's timeout, so that this function's original caller
+     * can stop sounds from playing by calling cancelTimeout(timeoutWrapper.timeout).
+     * (The caller created the timeoutWrapper object and then passed it by reference
+     * into this function. Thus, the caller will see any edits that this function makes to
+     * timeoutWrapper. If instead this function took a timeout primitive that wasn't contained
+     * in a wrapper object, then this function would take the timeout by value, so the caller would
+     * not see edits to the caller.)
+     */
+    function repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper) {
+        const delayTimeMs = randomIntInRange(INCLUSIVE_MIN_SFX_PAUSE_MS, EXCLUSIVE_MAX_SFX_PAUSE_MS)
+        timeoutWrapper.timeout = setTimeout(() => {
+            playRandomSfxFromPathsBlocking(sfxPaths)
+            repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper)
+        }, delayTimeMs)
+    }
+
+    /**
      * Return the given input element's text when the user presses enter.
      */
     function getValueOnEnter(inputElement) {
@@ -336,60 +404,6 @@
     }
 
     /**
-     * Return a random int in the half-open interval [inclusiveMin, exclusiveMax).
-     */
-    function randomIntInRange(inclusiveMin, exclusiveMax) {
-        return inclusiveMin + Math.floor(Math.random() * (exclusiveMax - inclusiveMin));
-    }
-
-    function randomItemInArray(array) {
-        return array[randomIntInRange(0, array.length)]
-    }
-
-    /**
-     * Delay execution for the given duration.
-     */
-    function delay(durationMs) {
-        return new Promise(resolve =>
-            setTimeout(resolve, durationMs)
-        )
-    }
-
-    /**
-     * Play a random sound effect from the given list of sound effect paths,
-     * blocking until the sound finishes.
-     */
-    function playRandomSfxFromPathsBlocking(sfxPaths) {
-        const sfxPath = randomItemInArray(sfxPaths)
-        return new Promise(resolve => {
-            let audio = new Audio(sfxPath)
-            audio.onended = resolve
-            audio.play()
-        })
-    }
-
-    /**
-     * Without blocking execution, repeatedly wait a random amount of time
-     * and then play a random sound from the given list of sound effect paths.
-     * During each iteration, update the value in timeoutWrapper.timeout
-     * with the current iteration's timeout, so that this function's original caller
-     * can stop sounds from playing by calling cancelTimeout(timeoutWrapper.timeout).
-     * (The caller created the timeoutWrapper object and then passed it by reference
-     * into this function. Thus, the caller will see any edits that this function makes to
-     * timeoutWrapper. If instead this function took a timeout primitive that wasn't contained
-     * in a wrapper object, then this function would take the timeout by value, so the caller would
-     * not see edits to the caller.)
-     */
-    function repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper) {
-        const delayTimeMs = randomIntInRange(INCLUSIVE_MIN_SFX_PAUSE_MS, EXCLUSIVE_MAX_SFX_PAUSE_MS)
-        timeoutWrapper.timeout = setTimeout(() => {
-            playRandomSfxFromPathsBlocking(sfxPaths)
-            repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper)
-        }, delayTimeMs)
-    }
-
-
-    /**
      * Display a bunch of junk characters.
      */
     async function runJunkScreen(consoleElement) {
@@ -429,8 +443,7 @@
             await delay(chunkDelayMs)
         }
 
-        const finalDelayMs = 1000
-        await delay(finalDelayMs)
+        await delay(1000)
     }
 
     /**
@@ -518,20 +531,6 @@
         await runProgressBar(loadingScreenElement)
 
         await delay(1000)
-    }
-
-    // the possible outcomes of each match
-    const Outcome = {
-        SQUINGO: "squingo",
-        NOT_SQUINGO: "not squingo",
-        MONKEY_PIRATE: "monkey pirate",
-    }
-
-    // a map from each outcome to its probability relative to the other outcomes
-    const OUTCOME_TO_RELATIVE_PROBABILITY = {
-        [Outcome.SQUINGO]: 46,
-        [Outcome.NOT_SQUINGO]: 44,
-        [Outcome.MONKEY_PIRATE]: 10,
     }
 
     /**
@@ -632,9 +631,7 @@
         const consoleElement = document.getElementById("console")
 
         while (true) {
-            const cardHand = await runInputScreen(consoleElement)
-
-            console.log(`cardHand finished: ${cardHand}`)
+            await runInputScreen(consoleElement)
             consoleElement.replaceChildren()
 
             await runJunkScreen(consoleElement)

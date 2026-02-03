@@ -29,7 +29,7 @@
         --font-family-change-font-family: "Comic Sans MS";
         --duplicate-text-color: #f00;
         --translate-margin-top: 10em;
-        --translate-margin-top: 10em;
+        --translate-margin-left: 10em;
 
         /* synchronize the junk screen animations with the junk screen's duration */
         --junk-screen-animation-length: 1s;
@@ -95,15 +95,15 @@
         }
 
         68% {
-            color: var(--color-change-font-color-1);
+            color: var(--color-change-color-1);
         }
 
         90% {
-            color: var(--color-change-font-color-2);
+            color: var(--color-change-color-2);
         }
 
         100% {
-            color: var(--color-change-font-color-2);
+            color: var(--color-change-color-2);
         }
     }
 
@@ -156,12 +156,12 @@
 
         11% {
             margin-top: var(--translate-margin-top);
-            margin-left: var(--translate-margin-top);
+            margin-left: var(--translate-margin-left);
         }
 
         100% {
             margin-top: var(--translate-margin-top);
-            margin-left: var(--translate-margin-top);
+            margin-left: var(--translate-margin-left);
         }
     }
 
@@ -737,12 +737,12 @@
         const colorChangeHue1 = randomIntInRange(0, 359)
         const colorChangeHue2 = randomIntInRange(0, 359)
         documentElement.style.setProperty("--color-change-color-1", `hsl(${colorChangeHue1}deg, 75%, 50%)`)
-        documentElement.style.setProperty("--color-change-color-2", `hsl(${colorChangeHue1}deg, 75%, 50%)`)
+        documentElement.style.setProperty("--color-change-color-2", `hsl(${colorChangeHue2}deg, 75%, 50%)`)
 
         const translateMarginTopEm = randomIntInRange(-1, 12);
         const translateMarginLeftEm = randomIntInRange(-1, 10);
         documentElement.style.setProperty("--translate-margin-top", `${translateMarginTopEm}em`)
-        documentElement.style.setProperty("--translate-margin-top", `${translateMarginLeftEm}em`)
+        documentElement.style.setProperty("--translate-margin-left", `${translateMarginLeftEm}em`)
 
         const fontFamily = randomIntInRange(0, 2) == 0 ? "Comic Sans MS" : "Papyrus";
         documentElement.style.setProperty("--font-family-change-font-family", fontFamily)

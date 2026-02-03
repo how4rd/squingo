@@ -7,10 +7,249 @@
 </head>
 
 <style>
+    :root {
+        /*
+        start or stop the junk screen animations;
+        JS flips these values to "running" to start animations
+        */
+        --animation-play-state-blur: paused;
+        --animation-play-state-change-font-size: paused;
+        --animation-play-state-change-font-color: paused;
+        --animation-play-state-change-font-family: paused;
+        --animation-play-state-duplicate-text: paused;
+        --animation-play-state-translate: paused;
+        --animation-play-state-rotate: paused;
+
+        /*
+        customize the junk screen animations;
+        JS customizes these values
+        */
+        --color-change-color-1: #f00;
+        --color-change-color-2: #ff0;
+        --font-family-change-font-family: "Comic Sans MS";
+        --duplicate-text-color: #f00;
+        --translate-margin-top: 10em;
+        --translate-margin-top: 10em;
+
+        /* synchronize the junk screen animations with the junk screen's duration */
+        --junk-screen-animation-length: 1s;
+    }
+
+    @keyframes blur {
+        0% {
+            filter: none;
+        }
+
+        10% {
+            filter: none;
+        }
+
+        11% {
+            filter: blur(1px);
+        }
+
+        100% {
+            filter: blur(1px);
+        }
+    }
+
+    @keyframes change-font-size {
+        0% {
+            font-size: 1em;
+        }
+
+        49% {
+            font-size: 1em;
+        }
+
+        50% {
+            font-size: 4em;
+        }
+
+        74% {
+            font-size: 4em;
+        }
+
+        75% {
+            font-size: 2em;
+            opacity: 1;
+        }
+
+        95% {
+            font-size: 2em;
+            opacity: 1;
+        }
+
+        96% {
+            font-size: 1em;
+        }
+    }
+
+    @keyframes change-font-color {
+        0% {
+            color: inherit;
+        }
+
+        67% {
+            color: inherit;
+        }
+
+        68% {
+            color: var(--color-change-font-color-1);
+        }
+
+        90% {
+            color: var(--color-change-font-color-2);
+        }
+
+        100% {
+            color: var(--color-change-font-color-2);
+        }
+    }
+
+    @keyframes change-font-family {
+        0% {
+            font-family: inherit;
+        }
+
+        32% {
+            font-family: inherit;
+        }
+
+        33% {
+            font-family: var(--font-family-change-font-family);
+        }
+
+        100% {
+            font-family: var(--font-family-change-font-family);
+        }
+    }
+
+    @keyframes duplicate-text {
+        0% {
+            text-shadow: inherit;
+        }
+
+        50% {
+            text-shadow: inherit;
+        }
+
+        51% {
+            text-shadow: 0px 0.5em 0 var(--duplicate-text-color);
+        }
+
+        100% {
+            text-shadow: 0px 0.5em 0 var(--duplicate-text-color);
+        }
+    }
+
+    @keyframes translate {
+        0% {
+            margin-top: 0;
+            margin-left: 0;
+        }
+
+        10% {
+            margin-top: 0;
+            margin-left: 0;
+        }
+
+        11% {
+            margin-top: var(--translate-margin-top);
+            margin-left: var(--translate-margin-top);
+        }
+
+        100% {
+            margin-top: var(--translate-margin-top);
+            margin-left: var(--translate-margin-top);
+        }
+    }
+
+    @keyframes rotate {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        20% {
+            transform: rotate(0deg);
+        }
+
+        21% {
+            transform: rotate(-10deg);
+        }
+
+        80% {
+            transform: rotate(-10deg);
+        }
+
+        81% {
+            transform: rotate(5deg);
+        }
+
+        85% {
+            transform: rotate(5deg);
+        }
+
+        86% {
+            transform: rotate(-70deg);
+        }
+
+        100% {
+            transform: rotate(-70deg);
+        }
+    }
+
+    @keyframes blink {
+        0% {
+            opacity: 1;
+        }
+
+        40% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0;
+        }
+
+        95% {
+            opacity: 0;
+        }
+    }
+
+
+    html.animating {
+        animation: blur var(--junk-screen-animation-length) steps(100, jump-none);
+        animation-play-state: var(--animation-play-state-blur);
+    }
+
     body {
+        font-size: 1.2em;
         background: #222;
         font-family: monospace;
         color: #ddd;
+        text-shadow: -1px -1px 1px rgba(255, 69, 0, 0.5), 1px 1px 1px rgb(0, 191, 255, 0.5), 0 0 3px;
+        overflow: hidden;
+    }
+
+    body::after {
+        /*
+        If the gradient's element isn't the full height of the viewport,
+        the gradient will wrap strangely at the bottom of the element (at least in Firefox).
+        Prevent that wrapping by setting the gradient on an element that's the same height as
+        the viewport.
+        */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-image: repeating-linear-gradient(transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px);
+        pointer-events: none;
     }
 
     .input-so-far {
@@ -32,19 +271,42 @@
         padding-bottom: 1em;
     }
 
+    .animating #console {
+        animation:
+            change-font-size var(--junk-screen-animation-length) steps(100, jump-none),
+            change-font-color var(--junk-screen-animation-length) linear,
+            change-font-family var(--junk-screen-animation-length) steps(100, jump-none),
+            duplicate-text var(--junk-screen-animation-length) steps(100, jump-none),
+            translate var(--junk-screen-animation-length) steps(100, jump-none);
+        animation-play-state: var(--animation-play-state-change-font-size),
+            var(--animation-play-state-change-font-color),
+            var(--animation-play-state-change-font-family),
+            var(--animation-play-state-duplicate-text),
+            var(--animation-play-state-translate);
+    }
+
+    .junk-screen {
+        position: absolute;
+        top: -50%;
+        bottom: -50%;
+        left: -50%;
+        right: -50%;
+        overflow: hidden;
+    }
+
+    .animating .junk-screen {
+        animation: rotate var(--junk-screen-animation-length) steps(100, jump-none);
+        animation-play-state: var(--animation-play-state-rotate);
+    }
+
     .outcome-screen {
         padding-bottom: 1em;
     }
 
-    @keyframes blink {
-        50% {
-            opacity: 0;
-        }
-    }
-
     .outcome-text {
         white-space: pre;
-        animation: blink 1s infinite step-start;
+        animation: blink var(--junk-screen-animation-length) infinite linear;
+        text-shadow: -1px -1px 5px rgba(255, 69, 0, 0.3), 1px 1px 3px rgb(0, 191, 255, 0.3);
     }
 
     .outcome-text-squingo {
@@ -178,6 +440,20 @@
         [Outcome.MONKEY_PIRATE]: 10,
     }
 
+    // all the CSS variables controlling the junk screen's animations;
+    // to play an animation, set its play state variable to "running";
+    // to pause an animation, set its play state variable to "paused"
+    const JUNK_SCREEN_ANIMATION_PLAY_STATE_VARIABLE_NAMES = [
+        "--animation-play-state-blur",
+        "--animation-play-state-change-font-size",
+        "--animation-play-state-change-font-color",
+        "--animation-play-state-change-font-family",
+        "--animation-play-state-duplicate-text",
+        "--animation-play-state-translate",
+        "--animation-play-state-rotate"
+
+    ]
+
     // text to print when the hand is a double payout ("Squingo")
     // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
     TEXT_SQUINGO = `
@@ -304,6 +580,23 @@
     }
 
     /**
+     * Return a shuffled copy of the given array.
+     */
+    function buildShuffledArray(unshuffledArray) {
+        // Fisher-Yates shuffle
+        let shuffledArray = unshuffledArray.slice()
+        for (let currentIndex = 1; currentIndex < shuffledArray.length; ++currentIndex) {
+            const currentElement = shuffledArray[currentIndex]
+
+            const swapIndex = randomIntInRange(0, currentIndex + 1)
+
+            shuffledArray[currentIndex] = shuffledArray[swapIndex]
+            shuffledArray[swapIndex] = currentElement
+        }
+        return shuffledArray
+    }
+
+    /**
      * Delay execution for the given duration.
      */
     function delay(durationMs) {
@@ -404,23 +697,16 @@
     }
 
     /**
-     * Display a bunch of junk characters.
+     * Display a bunch of random junk characters on the given element.
      */
-    async function runJunkScreen(consoleElement) {
-        let junkScreenElement = document.createElement("div")
-        junkScreenElement.classList.add("junk-screen")
-        consoleElement.appendChild(junkScreenElement)
-
-        let junkElement = document.createElement("span")
-        junkScreenElement.appendChild(junkElement)
-
-        const inclusiveMinNumCharsToPrint = randomIntInRange(10000, 15000)
+    async function displayJunkScreenCharacters(junkElement) {
+        const inclusiveMinNumCharsToPrint = randomIntInRange(20000, 30000)
         let numCharsPrinted = 0
 
         const junkChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\t\t\t\t\t\t\n\r";
 
         while (numCharsPrinted < inclusiveMinNumCharsToPrint) {
-            const numCharsInChunk = randomIntInRange(3, 2000)
+            const numCharsInChunk = randomIntInRange(30, 2000)
             let chunkText = ""
             for (let indexInChunk = 0; indexInChunk < numCharsInChunk; ++indexInChunk) {
                 const shouldPrintNonWhitespace = randomIntInRange(0, 3) == 0
@@ -436,11 +722,84 @@
             junkElement.appendChild(chunkElement)
 
             numCharsPrinted += numCharsInChunk
-            const chunkDelayMs = (numCharsInChunk / 30) * randomIntInRange(1, 3)
+            const chunkDelayMs = (numCharsInChunk / 60) * randomIntInRange(1, 3)
             await delay(chunkDelayMs)
         }
+    }
 
-        await delay(1000)
+    /**
+     * Update the random variables that customize the junk screen's animations
+     */
+    function updateRandomAnimationVariables(documentElement) {
+        const duplicateTextHue = randomIntInRange(0, 359)
+        documentElement.style.setProperty("--duplicate-text-color", `hsl(${duplicateTextHue}deg, 75%, 50%)`)
+
+        const colorChangeHue1 = randomIntInRange(0, 359)
+        const colorChangeHue2 = randomIntInRange(0, 359)
+        documentElement.style.setProperty("--color-change-color-1", `hsl(${colorChangeHue1}deg, 75%, 50%)`)
+        documentElement.style.setProperty("--color-change-color-2", `hsl(${colorChangeHue1}deg, 75%, 50%)`)
+
+        const translateMarginTopEm = randomIntInRange(-1, 12);
+        const translateMarginLeftEm = randomIntInRange(-1, 10);
+        documentElement.style.setProperty("--translate-margin-top", `${translateMarginTopEm}em`)
+        documentElement.style.setProperty("--translate-margin-top", `${translateMarginLeftEm}em`)
+
+        const fontFamily = randomIntInRange(0, 2) == 0 ? "Comic Sans MS" : "Papyrus";
+        documentElement.style.setProperty("--font-family-change-font-family", fontFamily)
+    }
+
+    /**
+     * Randomly select the animations to run during the junk screen
+     * and return the names of the CSS variables controlling their play states
+     */
+    function getJunkScreenAnimationPlayStateVariableNames() {
+        const numAnimations = randomIntInRange(3, 5)
+        return buildShuffledArray(JUNK_SCREEN_ANIMATION_PLAY_STATE_VARIABLE_NAMES).slice(0, numAnimations)
+    }
+
+    /**
+     * Run random animations and display a bunch of random junk characters.
+     */
+    async function runJunkScreen(documentElement, consoleElement) {
+        let junkScreenElement = document.createElement("div")
+        junkScreenElement.classList.add("junk-screen")
+        consoleElement.appendChild(junkScreenElement)
+
+        let junkElement = document.createElement("span")
+        junkScreenElement.appendChild(junkElement)
+
+        const animationPlayStateVariableNames = getJunkScreenAnimationPlayStateVariableNames()
+        console.log(animationPlayStateVariableNames)
+
+        updateRandomAnimationVariables(documentElement)
+        // When we apply the animating class to the top html element,
+        // all the junk screens' animation rules will take effect,
+        // so the browser will calculate the animations
+        // using the animation variables' current values.
+        // (Order is important: if instead we updated the animation variables
+        // after setting the animating class--that is, after the animations first took effect--
+        // there would be no guarantee
+        // that the browser would recalculate the animations based on the variables' new values.
+        // See https://stackoverflow.com/a/61400589 and https://stackoverflow.com/a/64219834)
+        documentElement.classList.add("animating")
+
+        const animationLengthMs = randomIntInRange(1000, 2000)
+        const animationLengthSec = animationLengthMs / 1000
+        documentElement.style.setProperty("--junk-screen-animation-length", `${animationLengthSec}s`);
+        console.log(`animationLengthMs: ${animationLengthMs}`)
+
+        for (animationPlayStateVariableName of animationPlayStateVariableNames) {
+            documentElement.style.setProperty(animationPlayStateVariableName, "running");
+        }
+
+        await displayJunkScreenCharacters(junkElement)
+
+        await delay(animationLengthMs)
+
+        for (animationPlayStateVariableName of animationPlayStateVariableNames) {
+            document.documentElement.style.setProperty(animationPlayStateVariableName, "paused");
+        }
+        documentElement.classList.remove("animating")
     }
 
     /**
@@ -468,7 +827,7 @@
                 const textNoEllipsis = verb + ' ' + noun
                 const textFrames = ELLIPSIS_FRAMES.map(ellipsisFrame => textNoEllipsis + ellipsisFrame)
 
-                const numEllipses = randomIntInRange(1, 3)
+                const numEllipses = randomIntInRange(1, 4)
                 for (let ellipsisIndex = 0; ellipsisIndex < numEllipses; ++ellipsisIndex) {
                     for (const textFrame of textFrames) {
                         loadingMessageRowElement.textContent = textFrame
@@ -509,7 +868,8 @@
 
             const freezeTimeMs = percentage == freezePercentage
                 ? PROGRESS_BAR_FREEZE_TIME_MS
-                : randomIntInRange(5, 250)
+                : randomIntInRange(20, 150)
+            console.log(`freezeTimeMs: ${freezeTimeMs}`)
             await delay(freezeTimeMs)
         }
 
@@ -626,12 +986,12 @@
         document.title = randomItemInArray(PAGE_TITLES)
 
         const consoleElement = document.getElementById("console")
+        const documentElement = document.documentElement;
 
         while (true) {
             await runInputScreen(consoleElement)
-            consoleElement.replaceChildren()
 
-            await runJunkScreen(consoleElement)
+            await runJunkScreen(documentElement, consoleElement)
             consoleElement.replaceChildren()
 
             await runLoadingScreen(consoleElement)

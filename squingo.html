@@ -266,6 +266,20 @@
         outline: none;
     }
 
+    .input-so-far::after {
+        /*
+        stop the user from deselecting .input-so-far
+        by clicking below or to the right of it
+        */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        z-index: -1;
+    }
+
     .postprocessing-text {
         padding-top: 1em;
         padding-bottom: 1em;

@@ -659,10 +659,10 @@
         return new Promise(resolve => {
             inputElement.addEventListener("keydown", onKeyDown);
 
-            function onKeyDown(e) {
-                if (e.key === "Enter") {
+            function onKeyDown(event) {
+                if (event.key === "Enter") {
                     inputElement.removeEventListener("keydown", onKeyDown);
-                    resolve(inputElement.value);
+                    resolve(inputElement.textContent);
                 }
             }
         })
@@ -783,7 +783,6 @@
         junkScreenElement.appendChild(junkElement)
 
         const animationPlayStateVariableNames = getJunkScreenAnimationPlayStateVariableNames()
-        console.log(animationPlayStateVariableNames)
 
         updateRandomAnimationVariables(documentElement)
         // When we apply the animating class to the top html element,
@@ -800,7 +799,6 @@
         const animationLengthMs = randomIntInRange(1000, 2000)
         const animationLengthSec = animationLengthMs / 1000
         documentElement.style.setProperty("--junk-screen-animation-length", `${animationLengthSec}s`);
-        console.log(`animationLengthMs: ${animationLengthMs}`)
 
         for (animationPlayStateVariableName of animationPlayStateVariableNames) {
             documentElement.style.setProperty(animationPlayStateVariableName, "running");
@@ -883,7 +881,6 @@
             const freezeTimeMs = percentage == freezePercentage
                 ? PROGRESS_BAR_FREEZE_TIME_MS
                 : randomIntInRange(20, 150)
-            console.log(`freezeTimeMs: ${freezeTimeMs}`)
             await delay(freezeTimeMs)
         }
 

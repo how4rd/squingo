@@ -6,6 +6,8 @@
 █▀▄▄▄▄█▀    ▀█▄▄▄▀█▄   ▀█▄▄▀   ▄██▄ ▄█▄   ▀█   ▀▀█▄▄▄▀█   ▀▀█▄▄▄█▀
 ```
 
+## Play at [how4rd.github.io/squingo](https://how4rd.github.io/squingo/)
+
 ## Background
 
 Squingo is a card game from the future. Its rules are so complicated that real-time play is intractable using unaugmented human cognition. Instead, supercomputers analyze each hand to answer that most burning question: Squingo or Not Squingo?
@@ -22,7 +24,7 @@ The campers had a blast!
 
 ### Web
 
-As of February 2026, `squingo.html` contains a standalone web version of Squingo. To play, download the file and open it in your web browser.
+As of February 2026, you can play Squingo online at [how4rd.github.io/squingo](https://how4rd.github.io/squingo/). To play locally, download `index.html` and open it in your web browser.
 
 ### Python
 

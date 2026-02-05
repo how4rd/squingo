@@ -26,7 +26,7 @@
         */
         --color-change-color-1: #f00;
         --color-change-color-2: #ff0;
-        --font-family-change-font-family: "Comic Sans MS";
+        --font-family-change-font-family: "Comic Sans MS", "Comic Sans", cursive;
         --duplicate-text-color: #f00;
         --translate-margin-top: 10em;
         --translate-margin-left: 10em;
@@ -226,7 +226,11 @@
     body {
         font-size: 1.2em;
         background: #222;
-        font-family: monospace;
+        /*
+        font stack adapted from the "Monospace Code" stack at
+        https://github.com/system-fonts/modern-font-stacks/blob/ba9ebcfcea446f47352aacb69ceca22b2e9d682c/README.md
+        */
+        font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
         color: #ddd;
         text-shadow: -1px -1px 1px rgba(255, 69, 0, 0.5), 1px 1px 1px rgb(0, 191, 255, 0.5), 0 0 3px;
         overflow: hidden;
@@ -758,7 +762,9 @@
         documentElement.style.setProperty("--translate-margin-top", `${translateMarginTopEm}em`)
         documentElement.style.setProperty("--translate-margin-left", `${translateMarginLeftEm}em`)
 
-        const fontFamily = randomIntInRange(0, 2) == 0 ? "Comic Sans MS" : "Papyrus";
+        const fontFamily = randomIntInRange(0, 2) == 0
+            ? "'Comic Sans MS', 'Comic Sans', cursive"
+            : "Papyrus, fantasy";
         documentElement.style.setProperty("--font-family-change-font-family", fontFamily)
     }
 

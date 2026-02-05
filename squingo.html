@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SQUINGO</title>
+    <meta charset="UTF-8">
+</head>
+
+<style>
+    :root {
+        /*
+        start or stop the junk screen animations;
+        JS flips these values to "running" to start animations
+        */
+        --animation-play-state-blur: paused;
+        --animation-play-state-change-font-size: paused;
+        --animation-play-state-change-font-color: paused;
+        --animation-play-state-change-font-family: paused;
+        --animation-play-state-duplicate-text: paused;
+        --animation-play-state-translate: paused;
+        --animation-play-state-rotate: paused;
+
+        /*
+        customize the junk screen animations;
+        JS customizes these values
+        */
+        --color-change-color-1: #f00;
+        --color-change-color-2: #ff0;
+        --font-family-change-font-family: "Comic Sans MS", "Comic Sans", cursive;
+        --duplicate-text-color: #f00;
+        --translate-margin-top: 10em;
+        --translate-margin-left: 10em;
+
+        /* synchronize the junk screen animations with the junk screen's duration */
+        --junk-screen-animation-length: 1s;
+    }
+
+    @keyframes blur {
+        0% {
+            filter: none;
+        }
+
+        10% {
+            filter: none;
+        }
+
+        11% {
+            filter: blur(1px);
+        }
+
+        100% {
+            filter: blur(1px);
+        }
+    }
+
+    @keyframes change-font-size {
+        0% {
+            font-size: 1em;
+        }
+
+        49% {
+            font-size: 1em;
+        }
+
+        50% {
+            font-size: 4em;
+        }
+
+        74% {
+            font-size: 4em;
+        }
+
+        75% {
+            font-size: 2em;
+            opacity: 1;
+        }
+
+        95% {
+            font-size: 2em;
+            opacity: 1;
+        }
+
+        96% {
+            font-size: 1em;
+        }
+    }
+
+    @keyframes change-font-color {
+        0% {
+            color: inherit;
+        }
+
+        67% {
+            color: inherit;
+        }
+
+        68% {
+            color: var(--color-change-color-1);
+        }
+
+        90% {
+            color: var(--color-change-color-2);
+        }
+
+        100% {
+            color: var(--color-change-color-2);
+        }
+    }
+
+    @keyframes change-font-family {
+        0% {
+            font-family: inherit;
+        }
+
+        32% {
+            font-family: inherit;
+        }
+
+        33% {
+            font-family: var(--font-family-change-font-family);
+        }
+
+        100% {
+            font-family: var(--font-family-change-font-family);
+        }
+    }
+
+    @keyframes duplicate-text {
+        0% {
+            text-shadow: inherit;
+        }
+
+        50% {
+            text-shadow: inherit;
+        }
+
+        51% {
+            text-shadow: 0px 0.5em 0 var(--duplicate-text-color);
+        }
+
+        100% {
+            text-shadow: 0px 0.5em 0 var(--duplicate-text-color);
+        }
+    }
+
+    @keyframes translate {
+        0% {
+            margin-top: 0;
+            margin-left: 0;
+        }
+
+        10% {
+            margin-top: 0;
+            margin-left: 0;
+        }
+
+        11% {
+            margin-top: var(--translate-margin-top);
+            margin-left: var(--translate-margin-left);
+        }
+
+        100% {
+            margin-top: var(--translate-margin-top);
+            margin-left: var(--translate-margin-left);
+        }
+    }
+
+    @keyframes rotate {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        20% {
+            transform: rotate(0deg);
+        }
+
+        21% {
+            transform: rotate(-10deg);
+        }
+
+        80% {
+            transform: rotate(-10deg);
+        }
+
+        81% {
+            transform: rotate(5deg);
+        }
+
+        85% {
+            transform: rotate(5deg);
+        }
+
+        86% {
+            transform: rotate(-70deg);
+        }
+
+        100% {
+            transform: rotate(-70deg);
+        }
+    }
+
+    @keyframes blink {
+        0% {
+            opacity: 1;
+        }
+
+        40% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0;
+        }
+
+        95% {
+            opacity: 0;
+        }
+    }
+
+
+    html.animating {
+        animation: blur var(--junk-screen-animation-length) steps(100, jump-none);
+        animation-play-state: var(--animation-play-state-blur);
+    }
+
+    body {
+        font-size: 1.2em;
+        background: #222;
+        /*
+        font stack adapted from the "Monospace Code" stack at
+        https://github.com/system-fonts/modern-font-stacks/blob/ba9ebcfcea446f47352aacb69ceca22b2e9d682c/README.md
+        */
+        font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
+        color: #ddd;
+        text-shadow: -1px -1px 1px rgba(255, 69, 0, 0.5), 1px 1px 1px rgb(0, 191, 255, 0.5), 0 0 3px;
+        overflow: hidden;
+    }
+
+    body::after {
+        /*
+        If the gradient's element isn't the full height of the viewport,
+        the gradient will wrap strangely at the bottom of the element (at least in Firefox).
+        Prevent that wrapping by setting the gradient on an element that's the same height as
+        the viewport.
+        */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-image: repeating-linear-gradient(transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px);
+        pointer-events: none;
+    }
+
+    .input-so-far {
+        background: none;
+        border: 0;
+        font-family: inherit;
+        color: inherit;
+        caret-color: inherit;
+        user-select: none;
+        font-size: inherit;
+    }
+
+    .input-so-far:focus {
+        outline: none;
+    }
+
+    .input-so-far::after {
+        /*
+        stop the user from deselecting .input-so-far
+        by clicking below or to the right of it
+        */
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        z-index: -1;
+    }
+
+    .postprocessing-text {
+        padding-top: 1em;
+        padding-bottom: 1em;
+    }
+
+    .animating #console {
+        animation:
+            change-font-size var(--junk-screen-animation-length) steps(100, jump-none),
+            change-font-color var(--junk-screen-animation-length) linear,
+            change-font-family var(--junk-screen-animation-length) steps(100, jump-none),
+            duplicate-text var(--junk-screen-animation-length) steps(100, jump-none),
+            translate var(--junk-screen-animation-length) steps(100, jump-none);
+        animation-play-state: var(--animation-play-state-change-font-size),
+            var(--animation-play-state-change-font-color),
+            var(--animation-play-state-change-font-family),
+            var(--animation-play-state-duplicate-text),
+            var(--animation-play-state-translate);
+    }
+
+    .junk-screen {
+        position: absolute;
+        top: -50%;
+        bottom: -50%;
+        left: -50%;
+        right: -50%;
+        overflow: hidden;
+    }
+
+    .animating .junk-screen {
+        animation: rotate var(--junk-screen-animation-length) steps(100, jump-none);
+        animation-play-state: var(--animation-play-state-rotate);
+    }
+
+    .outcome-screen {
+        padding-bottom: 1em;
+    }
+
+    .outcome-text {
+        white-space: pre;
+        animation: blink var(--junk-screen-animation-length) infinite linear;
+        text-shadow: -1px -1px 5px rgba(255, 69, 0, 0.3), 1px 1px 3px rgb(0, 191, 255, 0.3);
+    }
+
+    .outcome-text-squingo {
+        color: #0f0;
+    }
+
+    .outcome-text-not-squingo {
+        color: #f00;
+    }
+
+    .outcome-text-monkey-pirate {
+        color: #f0f;
+    }
+
+    .outcome-graphic {
+        white-space: pre;
+    }
+</style>
+
+<body>
+    <div id="console"></div>
+</body>
+
+<script>
+    // possible page titles to set on load
+
+    const PAGE_TITLES = [
+        "𝕊ℚ𝕌𝕀ℕ𝔾𝕆",
+        "S̸̥͎̘̹͍̓̀̈͗̌Q̵̖̒͆U̶̙͑̽̀͛͝Ì̷̗̖͒N̷̘̰̲̮͋̒̽G̴̖̣̥͇͉̋̈́̕O̴̝̤͍̒͒",
+        "🅂🅀🅄🄸🄽🄶🄾",
+        "𝓼𝓺𝓾𝓲𝓷𝓰𝓸",
+        "𝘴𝘲𝘶𝘪𝘯𝘨𝘰",
+        "oƃuᴉnbs",
+        "squingo",
+        "ｓｑｕｉｎｇｏ",
+        "ⓢⓠⓤⓘⓝⓖⓞ",
+    ]
+
+    // probability that each given loading message is the easter egg message
+    const LOADING_EASTER_EGG_PROBABILILITY = 0.01
+
+    // easter egg loading text (appears with probability given by EASTER_EGG_Loading_PERCENTAGE)
+    const LOADING_EASTER_EGG_TEXT = "SOMEBODY PLEASE HELP ME I AM STUCK IN THE COMPUTER OPEN TH"
+
+    // possible filler texts to use when processing a hand
+
+    const LOADING_MESSAGE_VERBS = [
+        "Reticulating",
+        "Degaussing",
+        "Repiping",
+        "Rebooting",
+        "Differentiating with respect to",
+        "Consuming",
+        "Flummoxing",
+        "Derezzing",
+        "Applying the Fourier transform to",
+        "Defibrillating",
+        "Sublimating",
+        "Arming",
+        "Energizing",
+        "Aerosolizing",
+        "Exterminating",
+        "Traversing",
+        "Minifying",
+        "Compressing",
+        "Warming up",
+        "Neutralizing",
+        "Quantifying",
+        "Vectorizing",
+        "Rasterizing",
+        "Kerning",
+        "Parallelizing",
+        "Hashing",
+        "Encrypting",
+        "Decrypting",
+        "Jiggling",
+        "Restarting",
+        "Torquing",
+        "Syncing",
+        "Whiffling",
+        "Convolving",
+        "Gargling",
+        "Approximating",
+        "Lathing"
+    ]
+
+    const LOADING_MESSAGE_NOUNS = [
+        "splines",
+        "boron wave shift-scoop",
+        "plasma",
+        "beryllium antigravity turbine bracket",
+        "chromium dorsal crystal core",
+        "Higgs bosons",
+        "dilithium",
+        "kyber crystals",
+        "energized protodermis",
+        "exsidian layer",
+        "psionic unit",
+        "moon device",
+        "REDACTED",
+        "adamantium shell",
+        "cockroaches",
+        "droid brains",
+        "hyperdrive",
+        "big data",
+        "blockchain",
+        "Gaussian surface",
+        "vector field",
+        "flux",
+        "ad impressions",
+        "social graph",
+        "kerning",
+        "ligatures",
+        "GPUs",
+        "graphene nanotubes",
+        "quantum spins",
+        "diphthongs",
+        "convolutions",
+        "quandles",
+        "prism",
+        "nephroids",
+        "eigenvalues",
+        "eigenvectors",
+        "Mobius strip",
+        "spectral decomposition",
+        "transformers",
+        "glizzies",
+        "momentum operator",
+        "topologies",
+        "astrolabe",
+        "zamor sphere",
+        "cystine"
+    ]
+
+    // each "frame" of text in the ellipsis animation
+    const ELLIPSIS_FRAMES = [
+        "",
+        ".",
+        "..",
+        "..."
+    ]
+
+    // the length in characters of a full progress bar
+    const FULL_PROGRESS_BAR_LENGTH_CHARS = 75
+
+    // how long in milliseconds the progress bar should freeze in the late 90th percentages
+    const PROGRESS_BAR_FREEZE_TIME_MS = 5000
+
+    // the possible outcomes of each match
+    const Outcome = {
+        SQUINGO: "squingo",
+        NOT_SQUINGO: "not squingo",
+        MONKEY_PIRATE: "monkey pirate",
+    }
+
+    // a map from each outcome to its probability relative to the other outcomes
+    const OUTCOME_TO_RELATIVE_PROBABILITY = {
+        [Outcome.SQUINGO]: 46,
+        [Outcome.NOT_SQUINGO]: 44,
+        [Outcome.MONKEY_PIRATE]: 10,
+    }
+
+    // all the CSS variables controlling the junk screen's animations;
+    // to play an animation, set its play state variable to "running";
+    // to pause an animation, set its play state variable to "paused"
+    const JUNK_SCREEN_ANIMATION_PLAY_STATE_VARIABLE_NAMES = [
+        "--animation-play-state-blur",
+        "--animation-play-state-change-font-size",
+        "--animation-play-state-change-font-color",
+        "--animation-play-state-change-font-family",
+        "--animation-play-state-duplicate-text",
+        "--animation-play-state-translate",
+        "--animation-play-state-rotate"
+
+    ]
+
+    // text to print when the hand is a double payout ("Squingo")
+    // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
+    TEXT_SQUINGO = `
+ ▄█▀▀▀▄█   ▄▄█▀▀██   ▀██▀  ▀█▀ ▀██▀ ▀█▄   ▀█▀  ▄▄█▀▀▀▄█   ▄▄█▀▀██
+ ██▄▄  ▀  ▄█▀    ██   ██    █   ██   █▀█   █  ▄█▀     ▀  ▄█▀    ██
+  ▀▀███▄  ██      ██  ██    █   ██   █ ▀█▄ █  ██    ▄▄▄▄ ██      ██
+▄     ▀██ ▀█▄  ▀▄ ▀█  ██    █   ██   █   ███  ▀█▄    ██  ▀█▄     ██
+█▀▄▄▄▄█▀    ▀█▄▄▄▀█▄   ▀█▄▄▀   ▄██▄ ▄█▄   ▀█   ▀▀█▄▄▄▀█   ▀▀█▄▄▄█▀
+`
+
+    // text to print when the hand is a loss ("Not Squingo")
+    // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
+    TEXT_NOT_SQUINGO = `
+▀█▄   ▀█▀  ▄▄█▀▀██   █▀▀██▀▀█     ▄█▀▀▀▄█   ▄▄█▀▀██   ▀██▀  ▀█▀ ▀██▀ ▀█▄   ▀█▀  ▄▄█▀▀▀▄█   ▄▄█▀▀██
+ █▀█   █  ▄█▀    ██     ██        ██▄▄  ▀  ▄█▀    ██   ██    █   ██   █▀█   █  ▄█▀     ▀  ▄█▀    ██
+ █ ▀█▄ █  ██      ██    ██         ▀▀███▄  ██      ██  ██    █   ██   █ ▀█▄ █  ██    ▄▄▄▄ ██      ██
+ █   ███  ▀█▄     ██    ██       ▄     ▀██ ▀█▄  ▀▄ ▀█  ██    █   ██   █   ███  ▀█▄    ██  ▀█▄     ██
+▄█▄   ▀█   ▀▀█▄▄▄█▀    ▄██▄      █▀▄▄▄▄█▀    ▀█▄▄▄▀█▄   ▀█▄▄▀   ▄██▄ ▄█▄   ▀█   ▀▀█▄▄▄▀█   ▀▀█▄▄▄█▀
+`
+
+    // text to print when the hand is a triple payout ("Monkey Pirate")
+    // (text from https://texteditor.com/multiline-text-art/ on setting "Black 7")
+    TEXT_MONKEY_PIRATE = `
+▀██    ██▀  ▄▄█▀▀██   ▀█▄   ▀█▀ ▀██▀  █▀  ▀██▀▀▀▀█  ▀██▀ ▀█▀   ▀██▀▀█▄  ▀██▀ ▀██▀▀█▄       █     █▀▀██▀▀█ ▀██▀▀▀▀█
+ ███  ███  ▄█▀    ██   █▀█   █   ██ ▄▀     ██  ▄      ██ █      ██   ██  ██   ██   ██     ███       ██     ██  ▄
+ █▀█▄▄▀██  ██      ██  █ ▀█▄ █   ██▀█▄     ██▀▀█       ██       ██▄▄▄█▀  ██   ██▀▀█▀     █  ██      ██     ██▀▀█
+ █ ▀█▀ ██  ▀█▄     ██  █   ███   ██  ██    ██          ██       ██       ██   ██   █▄   ▄▀▀▀▀█▄     ██     ██
+▄█▄ █ ▄██▄  ▀▀█▄▄▄█▀  ▄█▄   ▀█  ▄██▄  ██▄ ▄██▄▄▄▄▄█   ▄██▄     ▄██▄     ▄██▄ ▄██▄  ▀█▀ ▄█▄  ▄██▄   ▄██▄   ▄██▄▄▄▄▄█
+`
+
+    // ASCII graphic to print when the hand is a triple payout ("Monkey Pirate")
+    GRAPHIC_MONKEY_PIRATE = `
+                                       .*,                         
+                                  %@%@@@@@@@@@@(                   
+                                #&&@@@@@@@@@@@@@@#                 
+                    ./(#(//(&@&%&@@ %@@@@@@@@@@%(@@                
+                 @@%%%%%&@@@@@@@@(.&       (@@. @@@@               
+                  @%%@@%@@@@@@@@@@@( .@* &@  #@/&@@@@@@.           
+                   .@@%@@@@@@@@@/ /.   */    @@@@@@@@@@&@@@@(      
+                   #%%@@@@@@@@@@@ @@# , .   (  (@@@@@@@@@@%%@@(    
+                  %%%%,,(@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&%%&&      
+             ,    %%%,,,*%%%%%%%%%%%%@%%%%%%%&@@@@@@@@@@&(         
+           ,,,     &%&,%%%%%%%,,*,,&%%%%%%%%%%%%%%#,*,.&%%%        
+          ,,,,        /%%%%%,,,,/@*,,,%(,,,,,,%%%%%%,,,,%%%.       
+         ,,,,,,       (%%*,,,,&@/,,,,,,,,,,,,,,/%%%%(,#%%(,        
+         ,,,,,,        %%,,,@@@@*,,,,,,,,,,,,,,*%%%%//*            
+         .,,,,,        .#%@,,,*,,,***,,,,,*,,,,,(%%%      ,*.      
+          ,,,.*,         (#,,,,,,(,,,,,,,,,,,,,,(%/   %&%%,.#%%%#  
+           ,,,,,            &*,,,,,,,**,,,,,,,#%,    %%        .%% 
+             ,.,            %####%#(*,,*/#%%#*        %%%*      /%&
+             ,((//,/%%%#%%%%#######*,,,##(####%%                (%%
+              ,,/(,%%%%%%%%######%#,,,,%//#####%%%%,           ,%% 
+                ///      (#####//##,,,,#%###%###%%%%/,,,      #%%  
+                         *%###%%(%*,,,,(#%%#####%%(/,,,,,   (%%.   
+                           &%%*,,,,,,,,,,/####*     .,*, (%#%      
+                            %%%%*,,,,,,/%%%%%#      *#%%%(         
+                           #%%%%%%%%%%%%%#%%%%%%%%%%/              
+                           &%%%%%%%%%%%%%%%%%%%                    
+                           &%%%%%        .%%%%%%,                  
+                           /%%%%#          /##*,,,                 
+                            *,,,,,          .,,,,,                 
+                            .,,,,.
+
+                HE DO BE TERRORIZING THE SEVEN SEAS THOUGH 👀
+`
+
+    // relative paths to filler sound effects to play immediately after input is entered
+    SFX_INPUT_PATHS = [
+        "sfx/input/Robot_blip-Marianne_Gagnon-120342607.wav"
+    ]
+
+    // relative paths to beep sound effects to play when a processing a hand
+    SFX_BEEP_PATHS = [
+        "sfx/beep/Bleep-SoundBible.com-1927126940.wav"
+    ]
+
+    // relative paths to miscellanous filler sound effects to play when processing a hand
+    SFX_MISC_PATHS = [
+        "sfx/misc/Alien Brain Scanner-SoundBible.com-2034590144.wav",
+        "sfx/misc/Computer Error Alert-SoundBible.com-783113881.wav",
+        "sfx/misc/Martian_Death_Ray-Mike_Koenig-937891031.wav",
+        "sfx/misc/Monster Growl-SoundBible.com-344645592.wav",
+        "sfx/misc/Time Warp-SoundBible.com-634766493.wav",
+        "sfx/misc/WilhelmScream.wav"
+    ]
+
+    // relative paths to sound effects to play when a hand is squingo
+    SFX_SQUINGO_PATHS = [
+        "sfx/squingo/cartoon-telephone_daniel_simion.wav",
+        "sfx/squingo/Computer_Magic-Microsift-1901299923.wav",
+        "sfx/squingo/Warning Siren-SoundBible.com-898272278.wav",
+        "sfx/squingo/Zombie In Pain-SoundBible.com-134322253.wav",
+    ]
+
+    // relative paths to sound effects to play when a hand is not squingo
+    SFX_NOT_SQUINGO_PATHS = [
+        "sfx/not_squingo/Burp 2x-SoundBible.com-1895509911.wav",
+        "sfx/not_squingo/Cat Scream-SoundBible.com-871191563.wav",
+        "sfx/not_squingo/Laugh Evil-SoundBible.com-1059217446.wav",
+        "sfx/not_squingo/Warning Siren-SoundBible.com-898272278.wav",
+    ]
+
+    // relative paths to sound effects to play when a hand is monkey pirate
+    SFX_MONKEY_PIRATE_PATHS = [
+        "sfx/monkey_pirate/monkey_pirate.wav"
+    ]
+
+    // the inclusive min amount of time in milliseconds to wait
+    // between playing consecutive non-blocking sound effects
+    INCLUSIVE_MIN_SFX_PAUSE_MS = 1000
+    // the exclusive max amount of time in milliseconds to wait
+    // between playing consecutive non-blocking sound effects
+    EXCLUSIVE_MAX_SFX_PAUSE_MS = 3000
+
+    /**
+     * Return a random int in the half-open interval [inclusiveMin, exclusiveMax).
+     */
+    function randomIntInRange(inclusiveMin, exclusiveMax) {
+        return inclusiveMin + Math.floor(Math.random() * (exclusiveMax - inclusiveMin));
+    }
+
+    function randomItemInArray(array) {
+        return array[randomIntInRange(0, array.length)]
+    }
+
+    /**
+     * Return a shuffled copy of the given array.
+     */
+    function buildShuffledArray(unshuffledArray) {
+        // Fisher-Yates shuffle
+        let shuffledArray = unshuffledArray.slice()
+        for (let currentIndex = 1; currentIndex < shuffledArray.length; ++currentIndex) {
+            const currentElement = shuffledArray[currentIndex]
+
+            const swapIndex = randomIntInRange(0, currentIndex + 1)
+
+            shuffledArray[currentIndex] = shuffledArray[swapIndex]
+            shuffledArray[swapIndex] = currentElement
+        }
+        return shuffledArray
+    }
+
+    /**
+     * Delay execution for the given duration.
+     */
+    function delay(durationMs) {
+        return new Promise(resolve =>
+            setTimeout(resolve, durationMs)
+        )
+    }
+
+    /**
+     * Play a random sound effect from the given list of sound effect paths,
+     * blocking until the sound finishes.
+     */
+    function playRandomSfxFromPathsBlocking(sfxPaths) {
+        const sfxPath = randomItemInArray(sfxPaths)
+        return new Promise(resolve => {
+            let audio = new Audio(sfxPath)
+            audio.onended = resolve
+            audio.play()
+        })
+    }
+
+    /**
+     * Without blocking, repeatedly wait a random amount of time
+     * and then play a random sound from the given list of sound effect paths.
+     * During each iteration, update the value in timeoutWrapper.timeout
+     * with the current iteration's timeout, so that this function's original caller
+     * can stop sounds from playing by calling cancelTimeout(timeoutWrapper.timeout).
+     * (The caller created the timeoutWrapper object and then passed it by reference
+     * into this function. Thus, the caller will see any edits that this function makes to
+     * timeoutWrapper. If instead this function took a timeout primitive that wasn't contained
+     * in a wrapper object, then this function would take the timeout by value, so the caller would
+     * not see edits to the caller.)
+     */
+    function repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper) {
+        const delayTimeMs = randomIntInRange(INCLUSIVE_MIN_SFX_PAUSE_MS, EXCLUSIVE_MAX_SFX_PAUSE_MS)
+        timeoutWrapper.timeout = setTimeout(() => {
+            playRandomSfxFromPathsBlocking(sfxPaths)
+            repeatRandomSfxFromPathsNonBlocking(sfxPaths, timeoutWrapper)
+        }, delayTimeMs)
+    }
+
+    /**
+     * Return the given input element's text when the user presses enter.
+     */
+    function getValueOnEnter(inputElement) {
+        return new Promise(resolve => {
+            inputElement.addEventListener("keydown", onKeyDown);
+
+            function onKeyDown(event) {
+                if (event.key === "Enter") {
+                    inputElement.removeEventListener("keydown", onKeyDown);
+                    resolve(inputElement.textContent);
+                }
+            }
+        })
+    }
+
+    /**
+     * Display an input element that prompts the user with the given text.
+     */
+    async function waitForInput(parentElement, promptText) {
+        let promptElement = document.createElement("span")
+        promptElement.classList.add("input-prompt")
+        promptElement.appendChild(document.createTextNode(promptText))
+
+        let inputElement = document.createElement("span")
+        inputElement.setAttribute("contenteditable", "plaintext-only")
+        inputElement.setAttribute("spellcheck", "false")
+        inputElement.classList.add("input-so-far")
+
+        let lineElement = document.createElement("div")
+        lineElement.classList.add("input-line", "input-line-active")
+        lineElement.append(promptElement, inputElement)
+
+        parentElement.appendChild(lineElement)
+
+        inputElement.focus()
+
+        const input = await getValueOnEnter(inputElement)
+
+        inputElement.blur()
+        inputElement.classList.remove("input-line-active")
+
+        return input
+    }
+
+    /**
+     * Display a screen asking the user to enter a card hand.
+     */
+    async function runInputScreen(consoleElement) {
+        let inputScreenElement = document.createElement("div")
+        inputScreenElement.classList.add("input-screen")
+        consoleElement.appendChild(inputScreenElement)
+
+        const cardHand = await waitForInput(inputScreenElement, "Enter the card hand: ")
+        await playRandomSfxFromPathsBlocking(SFX_INPUT_PATHS)
+
+        return cardHand
+    }
+
+    /**
+     * Display a bunch of random junk characters on the given element.
+     */
+    async function displayJunkScreenCharacters(junkElement) {
+        const inclusiveMinNumCharsToPrint = randomIntInRange(20000, 30000)
+        let numCharsPrinted = 0
+
+        const junkChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\t\t\t\t\t\t\n\r";
+
+        while (numCharsPrinted < inclusiveMinNumCharsToPrint) {
+            const numCharsInChunk = randomIntInRange(30, 2000)
+            let chunkText = ""
+            for (let indexInChunk = 0; indexInChunk < numCharsInChunk; ++indexInChunk) {
+                const shouldPrintNonWhitespace = randomIntInRange(0, 3) == 0
+                if (shouldPrintNonWhitespace) {
+                    chunkText += randomItemInArray(junkChars)
+                } else {
+                    chunkText += '\xa0'
+                }
+            }
+
+            let chunkElement = document.createElement("span")
+            chunkElement.textContent += chunkText
+            junkElement.appendChild(chunkElement)
+
+            numCharsPrinted += numCharsInChunk
+            const chunkDelayMs = (numCharsInChunk / 60) * randomIntInRange(1, 3)
+            await delay(chunkDelayMs)
+        }
+    }
+
+    /**
+     * Update the random variables that customize the junk screen's animations
+     */
+    function updateRandomAnimationVariables(documentElement) {
+        const duplicateTextHue = randomIntInRange(0, 359)
+        documentElement.style.setProperty("--duplicate-text-color", `hsl(${duplicateTextHue}deg, 75%, 50%)`)
+
+        const colorChangeHue1 = randomIntInRange(0, 359)
+        const colorChangeHue2 = randomIntInRange(0, 359)
+        documentElement.style.setProperty("--color-change-color-1", `hsl(${colorChangeHue1}deg, 75%, 50%)`)
+        documentElement.style.setProperty("--color-change-color-2", `hsl(${colorChangeHue2}deg, 75%, 50%)`)
+
+        const translateMarginTopEm = randomIntInRange(-1, 12);
+        const translateMarginLeftEm = randomIntInRange(-1, 10);
+        documentElement.style.setProperty("--translate-margin-top", `${translateMarginTopEm}em`)
+        documentElement.style.setProperty("--translate-margin-left", `${translateMarginLeftEm}em`)
+
+        const fontFamily = randomIntInRange(0, 2) == 0
+            ? "'Comic Sans MS', 'Comic Sans', cursive"
+            : "Papyrus, fantasy";
+        documentElement.style.setProperty("--font-family-change-font-family", fontFamily)
+    }
+
+    /**
+     * Randomly select the animations to run during the junk screen
+     * and return the names of the CSS variables controlling their play states
+     */
+    function getJunkScreenAnimationPlayStateVariableNames() {
+        const numAnimations = randomIntInRange(3, 5)
+        return buildShuffledArray(JUNK_SCREEN_ANIMATION_PLAY_STATE_VARIABLE_NAMES).slice(0, numAnimations)
+    }
+
+    /**
+     * Run random animations and display a bunch of random junk characters.
+     */
+    async function runJunkScreen(documentElement, consoleElement) {
+        let junkScreenElement = document.createElement("div")
+        junkScreenElement.classList.add("junk-screen")
+        consoleElement.appendChild(junkScreenElement)
+
+        let junkElement = document.createElement("span")
+        junkScreenElement.appendChild(junkElement)
+
+        const animationPlayStateVariableNames = getJunkScreenAnimationPlayStateVariableNames()
+
+        updateRandomAnimationVariables(documentElement)
+        // When we apply the animating class to the top html element,
+        // all the junk screens' animation rules will take effect,
+        // so the browser will calculate the animations
+        // using the animation variables' current values.
+        // (Order is important: if instead we updated the animation variables
+        // after setting the animating class--that is, after the animations first took effect--
+        // there would be no guarantee
+        // that the browser would recalculate the animations based on the variables' new values.
+        // See https://stackoverflow.com/a/61400589 and https://stackoverflow.com/a/64219834)
+        documentElement.classList.add("animating")
+
+        const animationLengthMs = randomIntInRange(1000, 2000)
+        const animationLengthSec = animationLengthMs / 1000
+        documentElement.style.setProperty("--junk-screen-animation-length", `${animationLengthSec}s`);
+
+        for (animationPlayStateVariableName of animationPlayStateVariableNames) {
+            documentElement.style.setProperty(animationPlayStateVariableName, "running");
+        }
+
+        await displayJunkScreenCharacters(junkElement)
+
+        await delay(animationLengthMs)
+
+        for (animationPlayStateVariableName of animationPlayStateVariableNames) {
+            document.documentElement.style.setProperty(animationPlayStateVariableName, "paused");
+        }
+        documentElement.classList.remove("animating")
+    }
+
+    /**
+     * Display a series of loading messages,
+     * each made by combining a random verb and noun.
+     */
+    async function runLoadingMessages(loadingScreenElement) {
+        let miscTimeoutWrapper = { timeout: null }
+        repeatRandomSfxFromPathsNonBlocking(SFX_MISC_PATHS, miscTimeoutWrapper)
+        await delay(1000)
+        let beepTimeoutWrapper = { timeout: null }
+        repeatRandomSfxFromPathsNonBlocking(SFX_BEEP_PATHS, beepTimeoutWrapper)
+
+        const numLoadingMessages = randomIntInRange(4, 10)
+        for (let loadingMessageIndex = 0; loadingMessageIndex <= numLoadingMessages; ++loadingMessageIndex) {
+            let loadingMessageRowElement = document.createElement("div")
+            loadingMessageRowElement.classList.add("active-loading-message")
+            loadingScreenElement.appendChild(loadingMessageRowElement)
+
+            if (Math.random() < LOADING_EASTER_EGG_PROBABILILITY) {
+                loadingMessageRowElement.textContent = LOADING_EASTER_EGG_TEXT
+            } else {
+                const verb = randomItemInArray(LOADING_MESSAGE_VERBS)
+                const noun = randomItemInArray(LOADING_MESSAGE_NOUNS)
+                const textNoEllipsis = verb + ' ' + noun
+                const textFrames = ELLIPSIS_FRAMES.map(ellipsisFrame => textNoEllipsis + ellipsisFrame)
+
+                const numEllipses = randomIntInRange(1, 4)
+                for (let ellipsisIndex = 0; ellipsisIndex < numEllipses; ++ellipsisIndex) {
+                    for (const textFrame of textFrames) {
+                        loadingMessageRowElement.textContent = textFrame
+                        await delay(100)
+                    }
+                }
+
+                loadingMessageRowElement.textContent += " done."
+            }
+            loadingMessageRowElement.classList.remove("active-loading-message")
+            await delay(500)
+        }
+
+        clearTimeout(miscTimeoutWrapper.timeout)
+        clearTimeout(beepTimeoutWrapper.timeout)
+    }
+
+    /**
+     * Display a progress bar ranging from 0-100 that progresses randomly.
+     * The bar freezes for a bit somewhere in the late 90th percentages.
+     */
+    async function runProgressBar(loadingScreenElement) {
+        let postprocessingTextElement = document.createElement("div")
+        postprocessingTextElement.classList.add("postprocessing-text")
+        postprocessingTextElement.textContent = "Postprocessing..."
+        loadingScreenElement.appendChild(postprocessingTextElement)
+
+        let progressBarElement = document.createElement("div")
+        progressBarElement.class = "progress-bar"
+        loadingScreenElement.appendChild(progressBarElement)
+
+        const freezePercentage = randomIntInRange(96, 100)
+
+        for (let percentage = 0; percentage <= 100; ++percentage) {
+            const currentProgressBarLengthChars = Math.round(FULL_PROGRESS_BAR_LENGTH_CHARS * percentage / 100)
+            const progressBarText = '\u25A0'.repeat(currentProgressBarLengthChars) + '\xa0'.repeat(FULL_PROGRESS_BAR_LENGTH_CHARS - currentProgressBarLengthChars)
+            progressBarElement.textContent = `${progressBarText}\xa0\xa0\xa0${percentage}%`
+
+            const freezeTimeMs = percentage == freezePercentage
+                ? PROGRESS_BAR_FREEZE_TIME_MS
+                : randomIntInRange(20, 150)
+            await delay(freezeTimeMs)
+        }
+
+        await delay(1000)
+    }
+
+    /**
+     * Display the loading screen, which shows loading messages and a progress bar.
+     */
+    async function runLoadingScreen(consoleElement) {
+        let loadingScreenElement = document.createElement("div")
+        loadingScreenElement.classList.add("loading-screen")
+        consoleElement.appendChild(loadingScreenElement)
+
+        await runLoadingMessages(loadingScreenElement)
+        await runProgressBar(loadingScreenElement)
+
+        await delay(1000)
+    }
+
+    /**
+     * return a key from the given map,
+     * where each key's value is the relative probability of selecting that key
+     */
+    function selectOutcome(outcomeToRelativeProbability) {
+        const denominator = Object.values(outcomeToRelativeProbability).reduce(
+            (denominatorSoFar, relativeProbability) => denominatorSoFar + relativeProbability,
+            0
+        )
+
+        const randomResult = randomIntInRange(0, denominator)
+        let relativeProbabilityAlreadyChecked = 0
+
+        // worked example of selecting a random number outcome:
+        // * denominator = 46 + 44 + 10 = 100
+        // * randomResult in [0, 100)
+        // * probability 46/100 of randomResult falling in [0, 46),
+        //   so probability 46/100 of (randomResult - 0) falling in [0, 46);
+        // * probability 44/100 of randomResult falling in [46, 46 + 44),
+        //   so probability 44/100 of (randomResult - 46) falling in [0, 44);
+        // * probability 10/100 of randomResult falling in [46 + 44, 46 + 44 + 10),
+        //   so probability 10/100 of (randomResult - 46 - 44) falling in [0, 10)
+
+        for (const [outcome, relativeProbability] of Object.entries(outcomeToRelativeProbability)) {
+            if (randomResult - relativeProbabilityAlreadyChecked < relativeProbability) {
+                return outcome
+            } else {
+                relativeProbabilityAlreadyChecked += relativeProbability
+            }
+        }
+
+        // the loop above should always terminate;
+        // execution should never reach this point
+        return Object.keys(outcomeToRelativeProbability)[0]
+    }
+
+    /**
+     * Display a screen that shows the round's outcome.
+     */
+    async function runOutcomeScreen(consoleElement) {
+        let outcomeElement = document.createElement("div")
+        outcomeElement.classList.add("outcome-screen")
+        consoleElement.appendChild(outcomeElement)
+
+        let surveySaysTextElement = document.createElement("div")
+        surveySaysTextElement.classList.add("survey-says-text")
+        surveySaysTextElement.textContent = "Survey says..."
+        outcomeElement.appendChild(surveySaysTextElement)
+
+        await delay(1000)
+
+        const outcome = selectOutcome(OUTCOME_TO_RELATIVE_PROBABILITY)
+
+        switch (outcome) {
+            case Outcome.SQUINGO:
+                let squingoTextElement = document.createElement("div")
+                squingoTextElement.classList.add("outcome-text", "outcome-text-squingo")
+                squingoTextElement.textContent = TEXT_SQUINGO
+                outcomeElement.appendChild(squingoTextElement)
+
+                await playRandomSfxFromPathsBlocking(SFX_SQUINGO_PATHS)
+
+                break;
+            case Outcome.NOT_SQUINGO:
+                let notSquingoTextElement = document.createElement("div")
+                notSquingoTextElement.classList.add("outcome-text", "outcome-text-not-squingo")
+                notSquingoTextElement.textContent = TEXT_NOT_SQUINGO
+                outcomeElement.appendChild(notSquingoTextElement)
+
+                await playRandomSfxFromPathsBlocking(SFX_NOT_SQUINGO_PATHS)
+
+                break;
+            default:  // monkey pirate
+                let monkeyPirateTextElement = document.createElement("div")
+                monkeyPirateTextElement.classList.add("outcome-text", "outcome-text-monkey-pirate")
+                monkeyPirateTextElement.textContent = TEXT_MONKEY_PIRATE
+                outcomeElement.appendChild(monkeyPirateTextElement)
+
+                let monkeyPirateGraphicElement = document.createElement("div")
+                monkeyPirateGraphicElement.classList.add("outcome-graphic", "outcome-graphic-monkey-pirate")
+                monkeyPirateGraphicElement.textContent = GRAPHIC_MONKEY_PIRATE
+                outcomeElement.appendChild(monkeyPirateGraphicElement)
+
+                await playRandomSfxFromPathsBlocking(SFX_MONKEY_PIRATE_PATHS)
+
+                break;
+        }
+    }
+
+    /**
+     * Run the game loop
+     */
+    async function runAllScreens() {
+        document.title = randomItemInArray(PAGE_TITLES)
+
+        const consoleElement = document.getElementById("console")
+        const documentElement = document.documentElement;
+
+        while (true) {
+            await runInputScreen(consoleElement)
+
+            await runJunkScreen(documentElement, consoleElement)
+            consoleElement.replaceChildren()
+
+            await runLoadingScreen(consoleElement)
+            consoleElement.replaceChildren()
+
+            await runOutcomeScreen(consoleElement)
+        }
+    }
+
+    runAllScreens()
+</script>
+
+</html>

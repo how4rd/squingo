@@ -18,9 +18,15 @@ The host instructs campers to perform arbitrary tasks, such as throwing cards at
 
 The campers had a blast!
 
-## Configuration
+## Run
 
-Squingo is written in Python. If you have `pip` installed, you can install the program's dependencies by running
+### Web
+
+As of February 2026, `squingo.html` contains a standalone web version of Squingo. To play, download the file and open it in your web browser.
+
+### Python
+
+The original Squingo from 2021 is written in Python. If you have `pip` installed, you can install the program's dependencies by running
 
 ```
 pip install -r requirements.txt

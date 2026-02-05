@@ -221,6 +221,7 @@
     html.animating {
         animation: blur var(--junk-screen-animation-length) steps(100, jump-none);
         animation-play-state: var(--animation-play-state-blur);
+        overflow: hidden;
     }
 
     body {
@@ -233,7 +234,6 @@
         font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
         color: #ddd;
         text-shadow: -1px -1px 1px rgba(255, 69, 0, 0.5), 1px 1px 1px rgb(0, 191, 255, 0.5), 0 0 3px;
-        overflow: hidden;
     }
 
     body::after {
@@ -273,7 +273,7 @@
     .input-so-far::after {
         /*
         stop the user from deselecting .input-so-far
-        by clicking below or to the right of it
+        by clicking away from it
         */
         content: '';
         position: absolute;
@@ -281,7 +281,6 @@
         left: 0;
         bottom: 0;
         right: 0;
-        z-index: -1;
     }
 
     .postprocessing-text {
